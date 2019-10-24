@@ -45,9 +45,18 @@ class Thumbnail
      * @version 1.4.4
      * @author  lakshmajim <lakshmajee88@gmail.com>
      */
-    public function getThumbnail($video_path, $storage_path, $thumnail_name, $tts = 10)
+    public function getThumbnail($video_path, $storage_path, $thumnail_name, $thumbnail_width = null, $thumbnail_height = null, $tts = 10)
     {
         try {
+
+            if($thumbnail_width == null){
+               $thumbnail_width =  config('thumbnail.dimensions.width');
+            }
+
+            if($thumbnail_height == null){
+                $thumbnail_height =  config('thumbnail.dimensions.height');
+             }
+
             if (config('thumbnail.binaries.enabled')) {
                 $ffmpeg = FFMpeg::create(
                     [
@@ -66,7 +75,7 @@ class Thumbnail
 
             $video
                 ->filters()
-                ->resize($this->getDimensions())
+                ->resize($this->getDimensions($thumbnail_width, $thumbnail_height))
                 ->synchronize(); //320, 240
             $video
                 ->frame(Coordinate\TimeCode::fromSeconds($tts))
@@ -82,8 +91,8 @@ class Thumbnail
                     $height    = imagesy($got_image);
 
                     // final output image dimensions
-                    $newwidth  = config('thumbnail.dimensions.width');
-                    $newheight = config('thumbnail.dimensions.height');
+                    $newwidth  = $thumbnail_width;
+                    $newheight = $thumbnail_height;
 
                     $tmp       = imagecreatetruecolor($newwidth, $newheight);
 
@@ -115,11 +124,19 @@ class Thumbnail
     //-------------------------------------------------------------------------
 
 
-    private function getDimensions()
+    private function getDimensions($thumbnail_width, $thumbnail_height)
     {
+
+        if($thumbnail_height == null || $thumbnail_width == null){
+            return new Coordinate\Dimension(
+                config('thumbnail.dimensions.height'),
+                config('thumbnail.dimensions.width')
+            );
+        }
+
         return new Coordinate\Dimension(
-            config('thumbnail.dimensions.height'),
-            config('thumbnail.dimensions.width')
+            $thumbnail_height,
+            $thumbnail_width
         );
     }
 
